@@ -1,0 +1,84 @@
+name: Docker CI/CD Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - feature/**
+
+env:
+  IMAGE_NAME: my-ai-framework
+
+jobs:
+  build-and-test:
+    name: Build and Test Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: Dockerfile
+        load: true  # Loads the image into Docker rather than pushing to a registry
+        tags: ${{ env.IMAGE_NAME }}:test
+
+    - name: Run Tests
+      run: docker run ${{ env.IMAGE_NAME }}:test /path/to/tests
+
+  deploy-dev:
+    name: Deploy to Development
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
+    steps:
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and Push Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: Dockerfile
+        push: true
+        tags: ${{ env.IMAGE_NAME }}:dev
+
+    - name: Deploy to Development Environment
+      run: echo "Deploying to dev environment" # Replace with your actual deployment command
+
+  deploy-main:
+    name: Deploy to Production
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Manual Deployment Trigger
+      uses: actions/github-script@v5
+      with:
+        script: |
+          const payload = {
+            ref: 'refs/heads/main', 
+            inputs: {
+              'deploy': 'true'
+            }
+          };
+          github.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'deploy-production.yml',
+            ref: 'main',
+            inputs: payload.inputs
+          });
+
