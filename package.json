@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "eslint.config.cjs",
   "scripts": {
-  "eslint": "eslint --config eslint.config.cjs src/**/*.{js,jsx}"
+  "eslint": "eslint --config eslint.config.cjs src/**/*.{js,jsx,ts,tsx}"
   },
   "devDependencies": {
     "eslint": "^9.2.0",
