@@ -13,6 +13,6 @@ repos:
     rev: 'v9.1.1'  # Use the sha / tag you want to point at
     hooks:
     -   id: eslint
-        args: ['--config', '.eslintrc.js']  # Specify the path to your ESLint config file
+        args: ['--config', 'eslint.config.js']  # Specify the path to your ESLint config file
         files: \.[jt]sx?$  # *.js, *.jsx, *.ts and *.tsx
         types: [file]
