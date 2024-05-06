@@ -4,7 +4,7 @@ import parser from "@typescript-eslint/parser";
 
 export default [
   {
-    files: ["src/**/*.ts", "src/**/*.tsx"],
+    files: ["*.{js,jsx,ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",
