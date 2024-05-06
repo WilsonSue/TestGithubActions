@@ -9,9 +9,6 @@ export default [
       ecmaVersion: 2022,
       sourceType: "module",
       parser,
-      ecmaFeatures: {
-        jsx: true,
-      },
       globals: {
         ...globals.browser,
         myCustomGlobal: "readonly",
