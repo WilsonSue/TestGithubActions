@@ -2,25 +2,76 @@ name: Python CI
 
 on:
   push:
-    branches: [ main, dev ]
+    branches:
+      - main
+      - dev
+      - "feature/**"
   pull_request:
-    branches: [ main, dev ]
+    branches:
+      - main
+      - dev
+      - "feature/**"
+  pull_request_review:
+    types: [submitted, edited]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.TEST_TOKEN}} # Ensures the repository is checked out using a personal access token
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.12'
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.12" # This ensures Python version 3.12 or higher is used
 
-    - name: Install Ruff
-      run: pip install ruff
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20.x" # This ensures Node.js version 20 or higher is used
 
-    - name: Run Ruff Linter
-      run: ruff .
+      - name: Install Node.js dependencies
+        run: npm ci
+        working-directory: ./vscode-extension
+
+      - name: Install pre-commit
+        run: pip install pre-commit # This ensures pre-commit is installed
+
+      - name: Install Ruff
+        run: pip install ruff # This ensures Ruff is installed
+
+      - name: Run Ruff Linter
+        run: ruff check . # This runs the Ruff linter on the entire project
+
+      - name: Run pre-commit Hooks
+        run: pre-commit run --all-files # Runs the precommit hooks on all files
+
+  auto-merge:
+    if: github.event.review.state == 'approved' && github.event.pull_request.user.login == 'dependabot[bot]'
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.TEST_TOKEN}}
+          fetch-depth: 0  # Necessary to fetch all history for branch management
+
+      - name: Auto-merge pull request
+        run: gh pr merge ${{ github.event.pull_request.number }} --merge
+
+      - name: Delete branch after merge
+        run: gh pr delete ${{ github.event.pull_request.head.ref }}
+        if: github.event.pull_request.head.repo.fork == false
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.TEST_TOKEN}}
