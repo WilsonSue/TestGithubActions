@@ -38,7 +38,6 @@ jobs:
 
       - name: Install Node.js dependencies
         run: npm ci
-        working-directory: ./vscode-extension
 
       - name: Install pre-commit
         run: pip install pre-commit # This ensures pre-commit is installed
