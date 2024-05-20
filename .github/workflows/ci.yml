@@ -57,20 +57,25 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
           ref: ${{ github.head_ref }}
-          token: ${{ secrets.TEST_TOKEN}}
+          token: ${{ secrets.TEST_TOKEN }}
           fetch-depth: 0  # Necessary to fetch all history for branch management
 
       - name: Auto-merge pull request
         run: gh pr merge ${{ github.event.pull_request.number }} --merge
 
       - name: Delete branch after merge
-        run: gh pr delete ${{ github.event.pull_request.head.ref }}
-        if: github.event.pull_request.head.repo.fork == false
+        run: |
+          branch=${{ github.event.pull_request.head.ref }}
+          repo=${{ github.repository }}
+          if [ "${{ github.event.pull_request.head.repo.fork }}" = "false" ]; then
+            gh api -X DELETE repos/$repo/git/refs/heads/$branch
+          fi
 
     env:
-      GITHUB_TOKEN: ${{ secrets.TEST_TOKEN}}
+      GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
